@@ -1,0 +1,12 @@
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+override.tf
+override.tf.json
+*.tfplan
+*.tfvars.auto
+*.tfvars.json
+# Não ignore o lock file do Terraform: ele garante versões consistentes de provedores
+!.terraform.lock.hcl
+*.pem
