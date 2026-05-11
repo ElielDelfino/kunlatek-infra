@@ -237,13 +237,35 @@ resource "aws_iam_role_policy" "cluster_autoscaler" {
 resource "aws_launch_template" "node" {
   name_prefix = "${var.cluster_name}-node-"
 
+  # Prefix delegation: informa ao kubelet que pode rodar até 110 pods por node.
+  # Sem isso, o kubelet limita a 11 (cálculo padrão ENI do t3.small) mesmo com
+  # ENABLE_PREFIX_DELEGATION=true no VPC CNI.
+  user_data = base64encode(<<-EOT
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="==BOUNDARY=="
+
+    --==BOUNDARY==
+    Content-Type: application/node.eks.aws
+
+    ---
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      kubelet:
+        config:
+          maxPods: 110
+
+    --==BOUNDARY==--
+    EOT
+  )
+
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
       volume_size           = 20
       volume_type           = "gp3"
       delete_on_termination = true
-      encrypted             = true # criptografia em repouso obrigatória
+      encrypted             = true
     }
   }
 
@@ -266,6 +288,7 @@ resource "aws_eks_node_group" "app" {
   subnet_ids      = var.private_subnet_ids
   instance_types  = [var.node_instance_type]
   capacity_type   = "SPOT"
+  ami_type        = "AL2023_x86_64_STANDARD"
 
   launch_template {
     id      = aws_launch_template.node.id
@@ -504,4 +527,21 @@ resource "aws_eks_access_policy_association" "github_actions" {
   access_scope { type = "cluster" }
 
   depends_on = [aws_eks_access_entry.github_actions]
+}
+
+resource "aws_eks_access_entry" "admin_2" {
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = "arn:aws:iam::890871562295:user/victor-machado"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "admin_2" {
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = "arn:aws:iam::890871562295:user/victor-machado"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope { type = "cluster" }
+
+  depends_on = [aws_eks_access_entry.admin_2]
+  
 }

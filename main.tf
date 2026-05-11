@@ -12,11 +12,53 @@ terraform {
       source  = "hashicorp/null"
       version = "~> 3.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    datadog = {
+      source  = "DataDog/datadog"
+      version = "~> 3.39"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
+}
+
+provider "datadog" {
+  api_key = var.datadog_api_key
+  app_key = var.datadog_app_key
+  api_url = "https://api.datadoghq.com/"
+}
+
+provider "kubernetes" {
+  host                   = try(module.eks.cluster_endpoint, "")
+  cluster_ca_certificate = try(base64decode(module.eks.cluster_ca_data), "")
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
+  }
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = try(module.eks.cluster_endpoint, "")
+    cluster_ca_certificate = try(base64decode(module.eks.cluster_ca_data), "")
+
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
+    }
+  }
 }
 
 module "network" {
@@ -68,7 +110,7 @@ module "eks" {
   min_size           = var.eks_min_size
   max_size           = var.eks_max_size
   admin_iam_arn           = var.eks_admin_iam_arn
-  github_actions_role_arn = "arn:aws:iam::890871562295:role/GithubActionsAppDevOps"
+  github_actions_role_arn = var.eks_github_actions_role_arn
 }
 
 module "irsa_ebs_csi" {
@@ -78,17 +120,44 @@ module "irsa_ebs_csi" {
   oidc_issuer       = module.eks.oidc_issuer
 }
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = module.eks.cluster_name
-  addon_name               = "aws-ebs-csi-driver"
-  service_account_role_arn = module.irsa_ebs_csi.role_arn
+module "sqs_worker" {
+  source = "./modules/sqs-worker"
+  name   = "${var.eks_cluster_name}-worker"
 }
 
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name = module.eks.cluster_name
-  addon_name   = "vpc-cni"
+  cluster_name                = module.eks.cluster_name
+  addon_name                  = "vpc-cni"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
 
   configuration_values = jsonencode({
     enableNetworkPolicy = "true"
+    env = {
+      ENABLE_PREFIX_DELEGATION = "true"
+      WARM_PREFIX_TARGET       = "1"
+    }
   })
+}
+
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name                = module.eks.cluster_name
+  addon_name                  = "aws-ebs-csi-driver"
+  service_account_role_arn    = module.irsa_ebs_csi.role_arn
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [aws_eks_addon.vpc_cni]
+}
+
+module "eks_addons" {
+  source = "./modules/eks-addons"
+
+  cluster_name                = module.eks.cluster_name
+  lbc_role_arn                = module.eks.lbc_role_arn
+  cluster_autoscaler_role_arn = module.eks.cluster_autoscaler_role_arn
+  datadog_api_key             = var.datadog_api_key
+  eso_irsa_role_arn           = aws_iam_role.eso.arn
+
+  depends_on = [module.eks, aws_eks_addon.ebs_csi, aws_eks_addon.vpc_cni]
 }

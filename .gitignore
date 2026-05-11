@@ -5,6 +5,7 @@ crash.log
 override.tf
 override.tf.json
 *.tfplan
+*.tfvars
 *.tfvars.auto
 *.tfvars.json
 # Não ignore o lock file do Terraform: ele garante versões consistentes de provedores

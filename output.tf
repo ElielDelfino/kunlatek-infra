@@ -37,7 +37,7 @@ output "ebs_csi_role_arn" {
 }
 
 output "secrets_csi_role_arn" {
-  value = aws_iam_role.secrets_csi.arn
+  value = aws_iam_role.app_sa.arn
 }
 
 output "app_secret_arn" {
@@ -49,9 +49,17 @@ output "eks_cluster_autoscaler_role_arn" {
 }
 
 output "sqs_worker_url" {
-  value = aws_sqs_queue.worker.url
+  value = module.sqs_worker.queue_url
 }
 
 output "sqs_worker_arn" {
-  value = aws_sqs_queue.worker.arn
+  value = module.sqs_worker.queue_arn
+}
+
+output "eks_lbc_release_name" {
+  value = module.eks_addons.lbc_release_name
+}
+
+output "datadog_namespace" {
+  value = module.eks_addons.datadog_namespace
 }
