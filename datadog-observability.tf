@@ -178,15 +178,19 @@ resource "datadog_monitor" "cpu_alta" {
 resource "datadog_monitor" "pods_reiniciando" {
   name    = "[kunlatek-api] Pods Reiniciando"
   type    = "metric alert"
-  message = "Pods da kunlatek-api estão reiniciando. @eliel.delfino@fanut.ufal.br"
+  # Thresholds raised to avoid alert spam on transient SPOT interruptions.
+  # A SPOT reclaim typically causes 2-4 restarts over ~2 minutes before the
+  # cluster recovers on its own. Only alert when restarts exceed 8 in 15 min,
+  # which indicates a real sustained problem (OOM loop, bad deploy, etc.).
+  message = "Pods da kunlatek-api estão reiniciando de forma persistente (possível OOM loop ou deploy com erro). @eliel.delfino@fanut.ufal.br"
 
-  query = "sum(last_5m):sum:kubernetes.containers.restarts{kube_namespace:kunlatek} by {pod_name}.as_count() > 3"
+  query = "sum(last_15m):sum:kubernetes.containers.restarts{kube_namespace:kunlatek} by {pod_name}.as_count() > 8"
 
   monitor_thresholds {
-    critical = 3
-    warning  = 1
+    critical = 8
+    warning  = 5
   }
 
   notify_no_data    = false
-  renotify_interval = 10
+  renotify_interval = 60
 }
