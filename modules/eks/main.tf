@@ -305,6 +305,16 @@ resource "aws_eks_node_group" "app" {
     max_unavailable = 1
   }
 
+  labels = {
+    role = "app"
+  }
+
+  taint {
+    key    = "role"
+    value  = "app"
+    effect = "NO_SCHEDULE"
+  }
+
   tags = {
     Name                                            = "${var.cluster_name}-ng"
     "k8s.io/cluster-autoscaler/enabled"             = "true"
@@ -344,6 +354,86 @@ resource "null_resource" "drain_nodegroup" {
   }
 
   depends_on = [aws_eks_node_group.app]
+}
+
+# -------------------------------------------------------
+# NODE GROUP INFRA
+# Instâncias SPOT dedicadas para componentes de plataforma
+# (ArgoCD, Datadog Cluster Agent, ESO, LBC, CA, etc.)
+# Taint role=infra:NoSchedule impede pods de aplicação de aterrissar aqui
+# -------------------------------------------------------
+
+resource "aws_eks_node_group" "infra" {
+  cluster_name    = aws_eks_cluster.this.name
+  node_group_name = "${var.cluster_name}-infra-ng"
+  node_role_arn   = aws_iam_role.node.arn
+  subnet_ids      = var.private_subnet_ids
+  instance_types  = [var.node_instance_type]
+  capacity_type   = "SPOT"
+  ami_type        = "AL2023_x86_64_STANDARD"
+
+  launch_template {
+    id      = aws_launch_template.node.id
+    version = aws_launch_template.node.latest_version
+  }
+
+  scaling_config {
+    desired_size = var.infra_desired_size
+    min_size     = var.infra_min_size
+    max_size     = var.infra_max_size
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  labels = {
+    role = "infra"
+  }
+
+  taint {
+    key    = "role"
+    value  = "infra"
+    effect = "NO_SCHEDULE"
+  }
+
+  tags = {
+    Name                                            = "${var.cluster_name}-infra-ng"
+    "k8s.io/cluster-autoscaler/enabled"             = "true"
+    "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.node_worker_policy,
+    aws_iam_role_policy_attachment.node_cni_policy,
+    aws_iam_role_policy_attachment.node_ecr_policy,
+  ]
+}
+
+resource "null_resource" "drain_infra_nodegroup" {
+  triggers = {
+    cluster_name   = aws_eks_cluster.this.name
+    nodegroup_name = aws_eks_node_group.infra.node_group_name
+    region         = "us-east-1"
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      echo "Deletando nodegroup ${self.triggers.nodegroup_name} para limpar ENIs..."
+      aws eks delete-nodegroup \
+        --cluster-name ${self.triggers.cluster_name} \
+        --nodegroup-name ${self.triggers.nodegroup_name} \
+        --region ${self.triggers.region} 2>/dev/null || true
+      aws eks wait nodegroup-deleted \
+        --cluster-name ${self.triggers.cluster_name} \
+        --nodegroup-name ${self.triggers.nodegroup_name} \
+        --region ${self.triggers.region} 2>/dev/null || true
+      echo "Nodegroup deletado."
+    EOT
+  }
+
+  depends_on = [aws_eks_node_group.infra]
 }
 
 # -------------------------------------------------------

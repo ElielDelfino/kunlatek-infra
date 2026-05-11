@@ -34,3 +34,18 @@ variable "github_actions_role_arn" {
   type        = string
   description = "ARN da role IAM usada pelo GitHub Actions para deploy no EKS"
 }
+
+variable "infra_desired_size" {
+  type    = number
+  default = 2
+}
+
+variable "infra_min_size" {
+  type    = number
+  default = 2
+}
+
+variable "infra_max_size" {
+  type    = number
+  default = 3
+}
