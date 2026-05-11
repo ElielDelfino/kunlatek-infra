@@ -48,10 +48,25 @@ resource "helm_release" "lbc" {
     value = kubernetes_service_account_v1.lbc.metadata[0].name
   }
 
-  set { name = "nodeSelector.role"; value = "infra" }
-  set { name = "tolerations[0].key";    value = "role" }
-  set { name = "tolerations[0].value";  value = "infra" }
-  set { name = "tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [kubernetes_service_account_v1.lbc]
 }
@@ -73,10 +88,25 @@ resource "helm_release" "external_secrets" {
     value = var.eso_irsa_role_arn
   }
 
-  set { name = "nodeSelector.role"; value = "infra" }
-  set { name = "tolerations[0].key";    value = "role" }
-  set { name = "tolerations[0].value";  value = "infra" }
-  set { name = "tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
   timeout    = 600
@@ -118,10 +148,25 @@ resource "helm_release" "cluster_autoscaler" {
     value = "false"
   }
 
-  set { name = "nodeSelector.role"; value = "infra" }
-  set { name = "tolerations[0].key";    value = "role" }
-  set { name = "tolerations[0].value";  value = "infra" }
-  set { name = "tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
   timeout    = 600
@@ -224,18 +269,56 @@ resource "helm_release" "datadog" {
   }
 
   # DaemonSet agents: tolerate both node groups so metrics are collected from every node
-  set { name = "agents.tolerations[0].key";    value = "role" }
-  set { name = "agents.tolerations[0].value";  value = "infra" }
-  set { name = "agents.tolerations[0].effect"; value = "NoSchedule" }
-  set { name = "agents.tolerations[1].key";    value = "role" }
-  set { name = "agents.tolerations[1].value";  value = "app" }
-  set { name = "agents.tolerations[1].effect"; value = "NoSchedule" }
+  set {
+    name  = "agents.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "agents.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "agents.tolerations[0].effect"
+    value = "NoSchedule"
+  }
+
+  set {
+    name  = "agents.tolerations[1].key"
+    value = "role"
+  }
+
+  set {
+    name  = "agents.tolerations[1].value"
+    value = "app"
+  }
+
+  set {
+    name  = "agents.tolerations[1].effect"
+    value = "NoSchedule"
+  }
 
   # Cluster Agent: pin to infra nodes
-  set { name = "clusterAgent.nodeSelector.role";     value = "infra" }
-  set { name = "clusterAgent.tolerations[0].key";    value = "role" }
-  set { name = "clusterAgent.tolerations[0].value";  value = "infra" }
-  set { name = "clusterAgent.tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "clusterAgent.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "clusterAgent.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "clusterAgent.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "clusterAgent.tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [kubernetes_secret_v1.datadog, helm_release.lbc]
   timeout    = 600
@@ -252,10 +335,25 @@ resource "helm_release" "snapshot_controller" {
   namespace        = "kube-system"
   version          = "3.0.6"
 
-  set { name = "nodeSelector.role"; value = "infra" }
-  set { name = "tolerations[0].key";    value = "role" }
-  set { name = "tolerations[0].value";  value = "infra" }
-  set { name = "tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
   timeout    = 300
@@ -277,10 +375,25 @@ resource "helm_release" "metrics_server" {
     value = "--kubelet-insecure-tls"
   }
 
-  set { name = "nodeSelector.role"; value = "infra" }
-  set { name = "tolerations[0].key";    value = "role" }
-  set { name = "tolerations[0].value";  value = "infra" }
-  set { name = "tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
 }
@@ -302,10 +415,25 @@ resource "helm_release" "argocd" {
     value = "ClusterIP"
   }
 
-  set { name = "global.nodeSelector.role"; value = "infra" }
-  set { name = "global.tolerations[0].key";    value = "role" }
-  set { name = "global.tolerations[0].value";  value = "infra" }
-  set { name = "global.tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "global.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "global.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "global.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "global.tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
   timeout    = 600
@@ -328,14 +456,45 @@ resource "helm_release" "argo_rollouts" {
     value = "true"
   }
 
-  set { name = "controller.nodeSelector.role"; value = "infra" }
-  set { name = "controller.tolerations[0].key";    value = "role" }
-  set { name = "controller.tolerations[0].value";  value = "infra" }
-  set { name = "controller.tolerations[0].effect"; value = "NoSchedule" }
-  set { name = "dashboard.nodeSelector.role"; value = "infra" }
-  set { name = "dashboard.tolerations[0].key";    value = "role" }
-  set { name = "dashboard.tolerations[0].value";  value = "infra" }
-  set { name = "dashboard.tolerations[0].effect"; value = "NoSchedule" }
+  set {
+    name  = "controller.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "controller.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "controller.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "controller.tolerations[0].effect"
+    value = "NoSchedule"
+  }
+
+  set {
+    name  = "dashboard.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "dashboard.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "dashboard.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "dashboard.tolerations[0].effect"
+    value = "NoSchedule"
+  }
 
   depends_on = [helm_release.lbc]
   timeout    = 600
