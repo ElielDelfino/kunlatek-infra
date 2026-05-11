@@ -105,10 +105,13 @@ module "eks" {
   private_subnet_ids = module.network.private_subnet_ids
   public_subnet_ids  = module.network.public_subnet_ids
   kms_key_arn        = module.eks_kms.key_arn
-  node_instance_type = var.eks_node_instance_type
-  desired_size       = var.eks_desired_size
-  min_size           = var.eks_min_size
-  max_size           = var.eks_max_size
+  node_instance_type  = var.eks_node_instance_type
+  desired_size        = var.eks_desired_size
+  min_size            = var.eks_min_size
+  max_size            = var.eks_max_size
+  infra_desired_size  = var.eks_infra_desired_size
+  infra_min_size      = var.eks_infra_min_size
+  infra_max_size      = var.eks_infra_max_size
   admin_iam_arn           = var.eks_admin_iam_arn
   github_actions_role_arn = var.eks_github_actions_role_arn
 }

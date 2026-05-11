@@ -78,6 +78,21 @@ variable "eks_max_size" {
   default = 4
 }
 
+variable "eks_infra_desired_size" {
+  type    = number
+  default = 2
+}
+
+variable "eks_infra_min_size" {
+  type    = number
+  default = 2
+}
+
+variable "eks_infra_max_size" {
+  type    = number
+  default = 3
+}
+
 variable "eks_admin_iam_arn" {
   type = string
 }
