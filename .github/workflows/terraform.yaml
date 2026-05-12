@@ -91,12 +91,6 @@ jobs:
       - name: Stage 1 — Infra base + IAM
         run: |
           terraform apply --auto-approve \
-            -target=aws_iam_service_linked_role.elb \
-            -target=aws_iam_service_linked_role.eks \
-            -target=aws_iam_service_linked_role.eks_nodegroup \
-            -target=aws_iam_service_linked_role.autoscaling \
-            -target=aws_iam_service_linked_role.ec2_spot \
-            -target=aws_iam_service_linked_role.rds \
             -target=module.network \
             -target=module.eks_kms \
             -target=module.eks \

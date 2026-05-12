@@ -120,6 +120,50 @@ resource "aws_default_security_group" "default" {
   tags   = { Name = "default" }
 }
 
+# Remove ALBs/NLBs órfãos criados pelo LBC que sobrevivem à deleção do cluster EKS
+# quando o Ingress/Service não é deletado antes do cluster ser destruído
+resource "null_resource" "cleanup_lbc_load_balancers" {
+  triggers = {
+    vpc_id = aws_vpc.this.id
+  }
+
+  # Durante o destroy: cleanup_lbc_load_balancers é destruído ANTES de cleanup_lbc_security_groups
+  # (ALBs primeiro → libera SGs → então SGs podem ser deletados)
+  # e ANTES do IGW e subnets
+  depends_on = [
+    null_resource.cleanup_lbc_security_groups,
+    aws_internet_gateway.igw,
+    aws_subnet.public,
+    aws_subnet.private,
+  ]
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      echo "Removendo ALBs/NLBs órfãos na VPC ${self.triggers.vpc_id}..."
+      ALL_ARNS=$(aws elbv2 describe-load-balancers \
+        --query "LoadBalancers[?VpcId=='${self.triggers.vpc_id}'].LoadBalancerArn" \
+        --output text --region us-east-1)
+      for ARN in $ALL_ARNS; do
+        echo "Deletando LB: $ARN"
+        aws elbv2 delete-load-balancer --load-balancer-arn "$ARN" --region us-east-1 || true
+      done
+      if [ -n "$ALL_ARNS" ]; then
+        echo "Aguardando ENIs de LBs serem liberadas..."
+        until [ -z "$(aws ec2 describe-network-interfaces \
+          --filters \
+            "Name=vpc-id,Values=${self.triggers.vpc_id}" \
+            "Name=description,Values=ELB*" \
+          --query "NetworkInterfaces[].NetworkInterfaceId" \
+          --output text --region us-east-1)" ]; do
+          sleep 5
+        done
+      fi
+      echo "Limpeza de ALBs/NLBs concluída."
+    EOT
+  }
+}
+
 # Remove SGs criados dinamicamente pelo AWS Load Balancer Controller (k8s-*)
 # Esses SGs não são gerenciados pelo Terraform e bloqueiam a deleção da VPC
 resource "null_resource" "cleanup_lbc_security_groups" {

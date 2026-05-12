@@ -1,6 +1,6 @@
 VARS := -var-file=env/dev.tfvars
 
-.PHONY: init apply destroy plan import-slr
+.PHONY: init apply destroy plan
 
 init:
 	terraform init -upgrade
@@ -11,12 +11,6 @@ plan:
 apply:
 	@echo ">>> Stage 1 — Infra base + IAM"
 	terraform apply $(VARS) \
-	  -target=aws_iam_service_linked_role.elb \
-	  -target=aws_iam_service_linked_role.eks \
-	  -target=aws_iam_service_linked_role.eks_nodegroup \
-	  -target=aws_iam_service_linked_role.autoscaling \
-	  -target=aws_iam_service_linked_role.ec2_spot \
-	  -target=aws_iam_service_linked_role.rds \
 	  -target=module.network \
 	  -target=module.eks_kms \
 	  -target=module.eks \
@@ -41,19 +35,3 @@ apply:
 
 destroy:
 	terraform destroy $(VARS)
-
-# Importa service-linked roles se ja existirem na conta AWS.
-# Execute apenas se o apply falhar com "already exists" nessas roles.
-import-slr:
-	terraform import aws_iam_service_linked_role.elb \
-	  arn:aws:iam::890871562295:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing
-	terraform import aws_iam_service_linked_role.eks \
-	  arn:aws:iam::890871562295:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS
-	terraform import aws_iam_service_linked_role.eks_nodegroup \
-	  arn:aws:iam::890871562295:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup
-	terraform import aws_iam_service_linked_role.autoscaling \
-	  arn:aws:iam::890871562295:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling
-	terraform import aws_iam_service_linked_role.ec2_spot \
-	  arn:aws:iam::890871562295:role/aws-service-role/spot.amazonaws.com/AWSServiceRoleForEC2Spot
-	terraform import aws_iam_service_linked_role.rds \
-	  arn:aws:iam::890871562295:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS

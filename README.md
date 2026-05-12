@@ -11,7 +11,7 @@ kunlatek-infra/
 ├── output.tf                # outputs do state
 ├── secrets.tf               # AWS Secrets Manager (kunlatek/app)
 ├── datadog-observability.tf # dashboard e monitors do Datadog
-├── iam.tf                   # service-linked roles + IRSA roles (app e ESO)
+├── iam.tf                   # IRSA roles (app e ESO)
 ├── Makefile                 # atalhos para init / plan / apply em stages
 ├── env/
 │   └── dev.tfvars           # valores do ambiente dev (não commitado — coberto pelo .gitignore)
@@ -81,44 +81,8 @@ Todos os recursos IAM estão em `iam.tf`.
 
 | Recurso | Tipo | Permissões |
 |---|---|---|
-| `aws_iam_service_linked_role.elb` | Service-linked | AWS Load Balancer Controller |
-| `aws_iam_service_linked_role.eks` | Service-linked | Criação do cluster EKS |
-| `aws_iam_service_linked_role.eks_nodegroup` | Service-linked | Managed node groups |
-| `aws_iam_service_linked_role.autoscaling` | Service-linked | Auto Scaling Group |
-| `aws_iam_service_linked_role.ec2_spot` | Service-linked | Instâncias SPOT |
-| `aws_iam_service_linked_role.rds` | Service-linked | RDS |
 | `aws_iam_role.app_sa` | IRSA — `kunlatek/kunlatek-api-sa` | `secretsmanager:GetSecretValue`, SQS |
 | `aws_iam_role.eso` | IRSA — `external-secrets/external-secrets` | `secretsmanager:GetSecretValue`, `secretsmanager:DescribeSecret` |
-
-### Service-linked roles — import em conta com recursos existentes
-
-Se a conta AWS já tiver as roles (criadas por uso anterior de qualquer serviço), importe antes do `apply`:
-
-```bash
-make import-slr
-```
-
-Ou manualmente:
-
-```bash
-terraform import aws_iam_service_linked_role.elb \
-  arn:aws:iam::890871562295:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing
-
-terraform import aws_iam_service_linked_role.eks \
-  arn:aws:iam::890871562295:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS
-
-terraform import aws_iam_service_linked_role.eks_nodegroup \
-  arn:aws:iam::890871562295:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup
-
-terraform import aws_iam_service_linked_role.autoscaling \
-  arn:aws:iam::890871562295:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling
-
-terraform import aws_iam_service_linked_role.ec2_spot \
-  arn:aws:iam::890871562295:role/aws-service-role/spot.amazonaws.com/AWSServiceRoleForEC2Spot
-
-terraform import aws_iam_service_linked_role.rds \
-  arn:aws:iam::890871562295:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS
-```
 
 ## Secrets Manager
 
@@ -173,7 +137,7 @@ Os providers `helm` e `kubernetes` precisam do cluster pronto para inicializar. 
 
 | Stage | O que sobe |
 |---|---|
-| 1 | Service-linked roles, VPC, EKS (cluster + node groups), RDS, ECR, SQS, EKS addons nativos (vpc-cni, ebs-csi), Secrets Manager, IAM IRSA |
+| 1 | VPC, EKS (cluster + node groups), RDS, ECR, SQS, EKS addons nativos (vpc-cni, ebs-csi), Secrets Manager, IAM IRSA |
 | 2 | Helm charts via `module.eks_addons` (LBC, ESO, Autoscaler, Datadog, ArgoCD, Argo Rollouts) |
 | 3 | Apply completo — Datadog dashboards/monitors e qualquer recurso restante |
 

@@ -1,36 +1,4 @@
 # -------------------------------------------------------
-# Service-Linked Roles
-# Declaradas aqui para entrarem no state e serem destruídas
-# junto com a infra. Sem isso ficam orphaned na conta AWS.
-# Na primeira execução em conta zerada o Terraform cria.
-# Se já existirem: terraform import aws_iam_service_linked_role.<name> <arn>
-# -------------------------------------------------------
-
-resource "aws_iam_service_linked_role" "elb" {
-  aws_service_name = "elasticloadbalancing.amazonaws.com"
-}
-
-resource "aws_iam_service_linked_role" "eks" {
-  aws_service_name = "eks.amazonaws.com"
-}
-
-resource "aws_iam_service_linked_role" "eks_nodegroup" {
-  aws_service_name = "eks-nodegroup.amazonaws.com"
-}
-
-resource "aws_iam_service_linked_role" "autoscaling" {
-  aws_service_name = "autoscaling.amazonaws.com"
-}
-
-resource "aws_iam_service_linked_role" "ec2_spot" {
-  aws_service_name = "spot.amazonaws.com"
-}
-
-resource "aws_iam_service_linked_role" "rds" {
-  aws_service_name = "rds.amazonaws.com"
-}
-
-# -------------------------------------------------------
 # IRSA — locals compartilhado
 # -------------------------------------------------------
 
