@@ -25,6 +25,7 @@ permissions:
 # Variáveis não-sensíveis (região, CIDRs, tamanhos) usam os defaults de variables.tf
 env:
   TF_VAR_eks_admin_iam_arn:           ${{ secrets.TF_VAR_EKS_ADMIN_IAM_ARN }}
+  TF_VAR_eks_admin_iam_arn_2:         ${{ secrets.TF_VAR_EKS_ADMIN_IAM_ARN_2 }}
   TF_VAR_eks_github_actions_role_arn: ${{ secrets.TF_VAR_EKS_GITHUB_ACTIONS_ROLE_ARN }}
   TF_VAR_db_password:                 ${{ secrets.TF_VAR_DB_PASSWORD }}
   TF_VAR_jwt_secret:                  ${{ secrets.TF_VAR_JWT_SECRET }}

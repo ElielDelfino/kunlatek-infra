@@ -12,6 +12,49 @@ terraform {
 }
 
 # -------------------------------------------------------
+# StorageClass gp3
+# WaitForFirstConsumer: cria o EBS na mesma AZ do pod,
+# evitando que o volume fique inacessível após interrupção
+# SPOT e reprogramação do pod em outra AZ.
+# -------------------------------------------------------
+
+resource "kubernetes_storage_class_v1" "gp3" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner    = "ebs.csi.aws.com"
+  volume_binding_mode    = "WaitForFirstConsumer"
+  reclaim_policy         = "Retain"
+  allow_volume_expansion = true
+
+  parameters = {
+    type      = "gp3"
+    encrypted = "true"
+  }
+}
+
+# Remove o default da StorageClass gp2 criada automaticamente pelo EKS,
+# evitando conflito de dois defaults simultâneos.
+resource "kubernetes_annotations" "gp2_remove_default" {
+  api_version = "storage.k8s.io/v1"
+  kind        = "StorageClass"
+
+  metadata {
+    name = "gp2"
+  }
+
+  annotations = {
+    "storageclass.kubernetes.io/is-default-class" = "false"
+  }
+
+  depends_on = [kubernetes_storage_class_v1.gp3]
+}
+
+# -------------------------------------------------------
 # AWS Load Balancer Controller
 # -------------------------------------------------------
 

@@ -202,31 +202,6 @@ resource "aws_iam_role_policy_attachment" "node_ecr_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# Permite ao Cluster Autoscaler descobrir e ajustar o Auto Scaling Group
-resource "aws_iam_role_policy" "cluster_autoscaler" {
-  name = "${var.cluster_name}-cluster-autoscaler"
-  role = aws_iam_role.node.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeAutoScalingInstances",
-        "autoscaling:DescribeLaunchConfigurations",
-        "autoscaling:DescribeScalingActivities",
-        "autoscaling:DescribeTags",
-        "autoscaling:SetDesiredCapacity",
-        "autoscaling:TerminateInstanceInAutoScalingGroup",
-        "ec2:DescribeLaunchTemplateVersions",
-        "ec2:DescribeInstanceTypes",
-        "eks:DescribeNodegroup"
-      ]
-      Resource = "*"
-    }]
-  })
-}
 
 # -------------------------------------------------------
 # NODE GROUP
@@ -286,7 +261,9 @@ resource "aws_eks_node_group" "app" {
   node_group_name = "${var.cluster_name}-ng"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_subnet_ids
-  instance_types  = [var.node_instance_type]
+  # Múltiplos tipos reduzem risco de interrupção simultânea no SPOT.
+  # Em produção considerar ON_DEMAND para maior previsibilidade.
+  instance_types  = var.node_instance_types
   capacity_type   = "SPOT"
   ami_type        = "AL2023_x86_64_STANDARD"
 
@@ -368,7 +345,10 @@ resource "aws_eks_node_group" "infra" {
   node_group_name = "${var.cluster_name}-infra-ng"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_subnet_ids
-  instance_types  = [var.node_instance_type]
+  # Estudo/Free Tier: SPOT com múltiplos tipos para reduzir interrupção simultânea.
+  # Em produção: capacity_type = "ON_DEMAND" para garantir disponibilidade
+  # de componentes críticos (CA, ArgoCD, ESO, LBC).
+  instance_types  = var.node_instance_types
   capacity_type   = "SPOT"
   ami_type        = "AL2023_x86_64_STANDARD"
 
@@ -621,13 +601,13 @@ resource "aws_eks_access_policy_association" "github_actions" {
 
 resource "aws_eks_access_entry" "admin_2" {
   cluster_name  = aws_eks_cluster.this.name
-  principal_arn = "arn:aws:iam::890871562295:user/victor-machado"
+  principal_arn = var.admin_iam_arn_2
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "admin_2" {
   cluster_name  = aws_eks_cluster.this.name
-  principal_arn = "arn:aws:iam::890871562295:user/victor-machado"
+  principal_arn = var.admin_iam_arn_2
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope { type = "cluster" }

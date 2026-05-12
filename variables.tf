@@ -58,9 +58,9 @@ variable "eks_cluster_name" {
   default = "kunlatek-eks"
 }
 
-variable "eks_node_instance_type" {
-  type    = string
-  default = "t3.small"
+variable "eks_node_instance_types" {
+  type    = list(string)
+  default = ["t3.small", "t3a.small"]
 }
 
 variable "eks_desired_size" {
@@ -100,6 +100,11 @@ variable "eks_admin_iam_arn" {
 variable "eks_github_actions_role_arn" {
   type        = string
   description = "ARN da role IAM usada pelo GitHub Actions para deploy no EKS"
+}
+
+variable "eks_admin_iam_arn_2" {
+  type        = string
+  description = "ARN do segundo usuário IAM com acesso de admin ao cluster EKS"
 }
 
 variable "jwt_secret" {

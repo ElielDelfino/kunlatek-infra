@@ -11,9 +11,9 @@ variable "kubernetes_version" {
   default = "1.31"
 }
 
-variable "node_instance_type" {
-  type    = string
-  default = "t3.medium"
+variable "node_instance_types" {
+  type    = list(string)
+  default = ["t3.small", "t3a.small"]
 }
 
 variable "desired_size" {
@@ -33,6 +33,11 @@ variable "max_size" {
 variable "github_actions_role_arn" {
   type        = string
   description = "ARN da role IAM usada pelo GitHub Actions para deploy no EKS"
+}
+
+variable "admin_iam_arn_2" {
+  type        = string
+  description = "ARN do segundo usuário IAM com acesso de admin ao cluster EKS"
 }
 
 variable "infra_desired_size" {
