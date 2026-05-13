@@ -129,6 +129,22 @@ module "sqs_worker" {
   name   = "${var.eks_cluster_name}-worker"
 }
 
+resource "aws_eks_addon" "coredns" {
+  cluster_name                = module.eks.cluster_name
+  addon_name                  = "coredns"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  # Todos os nodes têm taints NoSchedule customizados (role=app/infra).
+  # Sem estas tolerations, o CoreDNS fica Pending e todo o cluster perde DNS.
+  configuration_values = jsonencode({
+    tolerations = [
+      { key = "role", operator = "Equal", value = "infra", effect = "NoSchedule" },
+      { key = "role", operator = "Equal", value = "app", effect = "NoSchedule" },
+    ]
+  })
+}
+
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name                = module.eks.cluster_name
   addon_name                  = "vpc-cni"
@@ -150,6 +166,24 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn    = module.irsa_ebs_csi.role_arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+
+  # Todos os nodes têm taints NoSchedule customizados (role=app/infra).
+  # Sem estas tolerations, os pods do addon não conseguem ser agendados,
+  # fazendo o addon ficar em estado DEGRADED.
+  configuration_values = jsonencode({
+    controller = {
+      tolerations = [
+        { key = "role", operator = "Equal", value = "infra", effect = "NoSchedule" },
+        { key = "role", operator = "Equal", value = "app", effect = "NoSchedule" },
+      ]
+    }
+    node = {
+      tolerations = [
+        { key = "role", operator = "Equal", value = "infra", effect = "NoSchedule" },
+        { key = "role", operator = "Equal", value = "app", effect = "NoSchedule" },
+      ]
+    }
+  })
 
   depends_on = [aws_eks_addon.vpc_cni]
 }

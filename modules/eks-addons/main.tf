@@ -151,6 +151,47 @@ resource "helm_release" "external_secrets" {
     value = "NoSchedule"
   }
 
+  # webhook e certController são sub-deployments independentes com sua própria spec
+  set {
+    name  = "webhook.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].effect"
+    value = "NoSchedule"
+  }
+
+  set {
+    name  = "certController.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "certController.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "certController.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "certController.tolerations[0].effect"
+    value = "NoSchedule"
+  }
+
   depends_on = [helm_release.lbc]
   timeout    = 600
 }
@@ -378,23 +419,44 @@ resource "helm_release" "snapshot_controller" {
   namespace        = "kube-system"
   version          = "3.0.6"
 
+  # Chart v3 usa controller.* e webhook.* — top-level tolerations/nodeSelector são ignorados
   set {
-    name  = "nodeSelector.role"
+    name  = "controller.nodeSelector.role"
     value = "infra"
   }
 
   set {
-    name  = "tolerations[0].key"
+    name  = "controller.tolerations[0].key"
     value = "role"
   }
 
   set {
-    name  = "tolerations[0].value"
+    name  = "controller.tolerations[0].value"
     value = "infra"
   }
 
   set {
-    name  = "tolerations[0].effect"
+    name  = "controller.tolerations[0].effect"
+    value = "NoSchedule"
+  }
+
+  set {
+    name  = "webhook.nodeSelector.role"
+    value = "infra"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].key"
+    value = "role"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].value"
+    value = "infra"
+  }
+
+  set {
+    name  = "webhook.tolerations[0].effect"
     value = "NoSchedule"
   }
 
